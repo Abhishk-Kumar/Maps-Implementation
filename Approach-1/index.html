@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <div id="map"></div>
+
+    
+    <div id="controls">
+        <button id="playButton">Play</button>
+        <button id="pauseButton">Pause</button>
+    </div>
+
+    
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <script src="https://unpkg.com/leaflet-tilelayer-gibs/leaflet-tilelayer-gibs.js"></script>
+
+    <script>
+        
+        const map = L.map('map').setView([20.5937, 78.9629], 5);
+
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        
+        const dates = [
+            '2023-09-30', '2023-10-01', '2023-10-02', '2023-10-03', '2023-10-04', 
+            '2023-10-05', '2023-10-06', '2023-10-07', '2023-10-08', '2023-10-09'
+        ];
+
+        let currentIndex = 0; 
+        let playInterval; 
+
+        
+        function addGIBSLayer(date) {
+            if (window.gibsLayer) {
+                map.removeLayer(window.gibsLayer); 
+            }
+
+            
+            window.gibsLayer = L.tileLayer(`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${date}/250m/{z}/{y}/{x}.jpg`, {
+                attribution: 'NASA GIBS',
+                tileSize: 256,
+                zoomOffset: 1, 
+                maxZoom: 7,
+                bounds: [[-85.05112877980659, -180], [85.0511287798066, 180]]
+            }).addTo(map);
+        }
+
+        
+        function updateLayer() {
+            const currentDate = dates[currentIndex]; 
+            addGIBSLayer(currentDate); 
+            currentIndex = (currentIndex + 1) % dates.length; 
+        }
+
+        function startPlay() {
+            playInterval = setInterval(updateLayer, 15000);
+        }
+
+        function stopPlay() {
+            clearInterval(playInterval);
+        }
+
+        addGIBSLayer(dates[currentIndex]);
+
+        
+        document.getElementById('playButton').addEventListener('click', startPlay);
+        document.getElementById('pauseButton').addEventListener('click', stopPlay);
+
+    </script>
+</body>
+</html>

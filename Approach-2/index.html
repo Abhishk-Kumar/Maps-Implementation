@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>India Map with Play Feature</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="map"></div>
+    <div id="controls">
+        <button id="playButton">Play</button>
+        <button id="pauseButton">Pause</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        const map = L.map('map').setView([20.5937, 78.9629], 5);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const instanceId = '547d6eb2-a144-4ef4-a521-535eea52fd0f'; 
+        
+        const dates = [
+            '2023-09-30', '2023-09-29', '2023-09-28', '2023-09-27', '2023-09-26'
+        ];
+
+        let currentIndex = 0; 
+        let playInterval; 
+
+        function addSentinelLayer(date) {
+            if (window.sentinelLayer) {
+                map.removeLayer(window.sentinelLayer);
+            }
+
+            const bounds = map.getBounds();
+            const bbox = [
+                bounds.getWest(),
+                bounds.getSouth(),
+                bounds.getEast(),
+                bounds.getNorth()
+            ].join(',');
+
+            console.log("Requesting tiles for bounding box:", bbox); 
+
+            const tileUrl = `https://services.sentinel-hub.com/ogc/wms/${instanceId}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=TRUE_COLOR&MAXCC=20&TIME=${date}/PT1M&FORMAT=image/png&WIDTH=512&HEIGHT=512&SRS=EPSG:3857&BBOX=${bbox}`;
+
+            console.log("Tile URL:", tileUrl); 
+
+            window.sentinelLayer = L.tileLayer(tileUrl, {
+                attribution: 'Sentinel Hub',
+                maxZoom: 18,
+                bounds: [[-85.05112877980659, -180], [85.0511287798066, 180]],
+            }).on('tileerror', function(error) {
+                console.error("Tile load error for date:", date, error);
+                currentIndex = (currentIndex + 1) % dates.length;
+                updateLayer();
+            }).addTo(map);
+        }
+
+        function updateLayer() {
+            const currentDate = dates[currentIndex];
+            console.log("Loading date:", currentDate); 
+            addSentinelLayer(currentDate); 
+        }
+
+        function startPlay() {
+            console.log("Play started"); 
+            playInterval = setInterval(updateLayer, 15000); 
+        }
+
+        function stopPlay() {
+            console.log("Play paused"); 
+            clearInterval(playInterval);
+        }
+
+        addSentinelLayer(dates[currentIndex]);
+        document.getElementById('playButton').addEventListener('click', startPlay);
+        document.getElementById('pauseButton').addEventListener('click', stopPlay);
+    </script>
+</body>
+</html>
