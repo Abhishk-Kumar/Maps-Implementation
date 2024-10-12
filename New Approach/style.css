@@ -1,0 +1,85 @@
+
+ body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+ #map { height: 100vh; }
+
+
+ #controls {
+     position: fixed;
+     bottom: 20px;
+     left: 50%;
+     transform: translateX(-50%);
+     background-color: rgba(0, 0, 0, 0.6); 
+     padding: 10px;
+     border-radius: 10px;
+     color: white;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     z-index: 1000; 
+ }
+
+
+ .control-row {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+ }
+
+ #playPauseButton {
+     margin-right: 10px;
+     padding: 10px 20px;
+     background-color: lightgreen;
+     border: none;
+     border-radius: 20px;
+     cursor: pointer;
+     transition: background-color 0.3s ease;
+     position: relative;
+ }
+
+
+ #playPauseButton:hover::after {
+     content: attr(data-hover); 
+     position: absolute;
+     top: -40px; 
+     left: 50%;
+     transform: translateX(-50%);
+     background-color: black;
+     padding: 5px 10px;
+     border-radius: 5px;
+     color: white;
+     font-size: 12px;
+     white-space: nowrap;
+     
+     
+ }
+
+ #spinner {
+     display: none;
+     border: 4px solid rgba(255, 255, 255, 0.3);
+     border-radius: 50%;
+     border-top: 4px solid #00FF00; 
+     width: 20px;
+     height: 20px;
+     margin-top: 10px;
+     animation: spin 1s linear infinite;
+ }
+
+ @keyframes spin {
+     0% { transform: rotate(0deg); }
+     100% { transform: rotate(360deg); }
+ }
+
+ #currentDate {
+     color: #ffffff;
+     text-align: center;
+     margin-top: 10px;
+ }
+
+ 
+ #dateSelector {
+     padding: 5px;
+     background-color: lightgray;
+     border: none;
+     border-radius: 5px;
+     cursor: pointer;
+ }

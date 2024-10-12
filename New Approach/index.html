@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapiify</title>
+    <title>Mapify</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
+
     <div id="map"></div>
 
     <div id="controls">
-        <button id="playButton">Play</button>
-        <button id="pauseButton">Pause</button>
-        <div id="spinner"></div> <!-- Spinner -->
-        <div id="terminatedText">Working Terminated</div> 
+        <div class="control-row">
+            <button id="playPauseButton" data-hover="Play Animation">Play</button>
+            <select id="dateSelector"></select> 
+        </div>
         <div id="currentDate"></div> 
+        <div id="spinner"></div> 
     </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-tilelayer-gibs/leaflet-tilelayer-gibs.js"></script>
 
     <script>
-      
+        
         const map = L.map('map').setView([20.5937, 78.9629], 5);
 
         
@@ -31,41 +32,35 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
+        
         function getLast7Days() {
             const today = new Date();
             const dates = [];
-
             for (let i = 0; i < 7; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() - i);
-                const formattedDate = date.toISOString().split('T')[0];
-                dates.push(formattedDate);
+                dates.push(date.toISOString().split('T')[0]);
             }
-            return dates.reverse(); 
+            return dates.reverse(); // Oldest first
         }
 
-        const dates = getLast7Days(); 
+        const dates = getLast7Days();
         let currentIndex = 0;
-        let playInterval;
+        let playInterval = null;
+
+        
+        const dateSelector = document.getElementById('dateSelector');
+        dates.forEach((date, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = date;
+            dateSelector.appendChild(option);
+        });
 
         
         function showSpinner(show) {
             const spinner = document.getElementById('spinner');
-            const terminatedText = document.getElementById('terminatedText');
             spinner.style.display = show ? 'block' : 'none';
-            terminatedText.style.display = show ? 'none' : 'none'; 
-        }
-
-        
-        function showTerminationMessage() {
-            document.getElementById('spinner').style.display = 'none'; 
-            document.getElementById('terminatedText').style.display = 'block'; 
-        }
-
-        
-        function changeButtonColor(buttonId, color) {
-            const button = document.getElementById(buttonId);
-            button.style.backgroundColor = color;
         }
 
         
@@ -73,9 +68,7 @@
             if (window.gibsLayer) {
                 map.removeLayer(window.gibsLayer); 
             }
-
             showSpinner(true); 
-
             window.gibsLayer = L.tileLayer(`https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${date}/250m/{z}/{y}/{x}.jpg`, {
                 attribution: 'NASA GIBS',
                 tileSize: 256,
@@ -83,47 +76,49 @@
                 maxZoom: 7,
                 bounds: [[-85.05112877980659, -180], [85.0511287798066, 180]]
             }).on('load', function() {
-                showSpinner(false); 
-                changeButtonColor('playButton', '#007bff'); 
-            }).on('tileerror', function() {
-                console.error(`No data for date: ${date}`);
-                showSpinner(false); 
+                showSpinner(false); // Hide spinner once loaded
             }).addTo(map);
-
-            
             document.getElementById('currentDate').innerText = `Showing date: ${date}`;
         }
 
-       
+        
         function updateLayer() {
-            const currentDate = dates[currentIndex];
-            addGIBSLayer(currentDate);
+            const selectedDate = dates[currentIndex];
+            addGIBSLayer(selectedDate);
             currentIndex = (currentIndex + 1) % dates.length; 
         }
 
-       
-        function startPlay() {
-            if (!playInterval) {  
-                playInterval = setInterval(updateLayer, 7000); 
-                changeButtonColor('playButton', 'green'); 
+        
+        function togglePlayPause() {
+            const button = document.getElementById('playPauseButton');
+            const spinner = document.getElementById('spinner');
+            if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+                button.innerText = "Play";
+                button.style.backgroundColor = "lightgreen";
+                button.setAttribute('data-hover', 'Play Animation');
+                spinner.style.borderTopColor = "#ffffff"; 
+            } else {
+                playInterval = setInterval(updateLayer, 3000); 
+                button.innerText = "Pause";
+                button.style.backgroundColor = "lightgrey";
+                button.setAttribute('data-hover', 'Pause Animation');
+                spinner.style.borderTopColor = "#00FF00"; 
                 updateLayer(); 
             }
         }
 
-      
-        function stopPlay() {
-            clearInterval(playInterval);  
-            playInterval = null; 
-            changeButtonColor('pauseButton', 'red'); 
-            changeButtonColor('playButton', '#007bff'); 
-            showTerminationMessage(); 
-        }
+       
+        dateSelector.addEventListener('change', function() {
+            currentIndex = parseInt(this.value);
+            addGIBSLayer(dates[currentIndex]); 
+        });
 
+       
         addGIBSLayer(dates[currentIndex]);
+        document.getElementById('playPauseButton').addEventListener('click', togglePlayPause);
 
-        
-        document.getElementById('playButton').addEventListener('click', startPlay);
-        document.getElementById('pauseButton').addEventListener('click', stopPlay);
     </script>
 </body>
 </html>
